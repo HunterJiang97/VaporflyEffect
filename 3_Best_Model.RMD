@@ -1,0 +1,185 @@
+---
+title: "Best Model"
+author: "Hunter Jiang"
+date: "4/15/2020"
+output: html_document
+---
+
+```{r}
+## Clear up
+rm(list=ls())
+setwd("C:/Users/User1/Desktop/WorkFlow/ST540Midterm/Simulation/")
+library(rjags)
+
+## Resource
+Shoe.data <- readRDS(file = "1_data.RDS")
+indi <- readRDS(file = "1_indi.RDS")
+trainfun <- readRDS(file = "1_jags.RDS")
+checkfun <- readRDS(file = "1_func.RDS")
+X <- as.matrix(readRDS(file = "1_dat1.RDS"))
+Y <- readRDS(file = "1_daty.RDS")
+```
+
+```{r best model}
+## JAGS Model: 2.1 Runner:RE Course:RE Shoe:Linear
+Model1[[1]] <- textConnection("model{
+
+   ## Likelihood
+    for(ii in 1:n){
+      y[ii] ~ dnorm(alpha1[f1[ii]] + alpha2[f2[ii]] + alpha3[f3[ii]] + inprod(x[ii,], beta[]), taue)
+    }
+
+
+   ## Priors
+   # Random effects
+    for(ii in 1:nf1){
+      alpha1[ii] ~ dnorm(mu, pec)
+    }
+    for(ii in 1:nf2){
+      alpha2[ii] ~ dnorm(mu, pec)
+    }
+    for(ii in 1:nf3){
+      alpha3[ii] ~ dnorm(mu, pec)
+    }
+    
+    for(jj in 1:p){
+      beta[jj] ~ dnorm(0, 0.001)
+    }
+    mu   ~ dnorm(0,0.001)
+    taue ~ dgamma(0.1,0.1)
+    pec <- 1 / sd^2
+    sd ~ dt(0, pow(10,-2), 1)T(0,)
+}")
+
+```
+
+```{r}
+## Train & Test
+Results <- matrix(NA, ncol = 5, nrow = 1)
+var <- c("alpha1", "alpha2","alpha3","beta")
+Train.dat <- Shoe.data
+model.jags <- jags.model(Model1[[1]], data = Train.dat, n.chains=2, quiet=TRUE)
+update(model.jags, 50000, progress.bar="none")
+sample.jags <- coda.samples(model.jags, variable.names = var, thin = 10, n.iter = 300000, progress.bar="none")
+Results[1,] <- checkfun(sample.jags, model.jags, X, Y)
+
+Results
+saveRDS(Results, file = "2_REREb.RDS")
+saveRDS(sample.jags, file = "samples.RDS")
+```
+
+```{r}
+## JAGS Model: 1.1 Runner:RE Course:RE Shoe:Linear
+Model1[[2]] <- textConnection("model{
+
+   ## Likelihood
+    for(ii in 1:n){
+      y[ii] ~ dnorm(alpha1 + alpha2[f2[ii]] + alpha3[f3[ii]] + inprod(x[ii,], beta[]), taue)
+    }
+
+
+   ## Priors
+   # Random effects
+    alpha1 ~ dnorm(mu, pec)
+    for(ii in 1:nf2){
+      alpha2[ii] ~ dnorm(mu, pec)
+    }
+    for(ii in 1:nf3){
+      alpha3[ii] ~ dnorm(mu, pec)
+    }
+    
+    for(jj in 1:p){
+      beta[jj] ~ dnorm(0, 0.001)
+    }
+    mu   ~ dnorm(0,0.001)
+    taue ~ dgamma(0.1,0.1)
+    pec <- 1 / sd^2
+    sd ~ dt(0, pow(10,-2), 1)T(0,)
+}")
+
+```
+
+```{r}
+## Train & Test
+var <- c("beta")
+Train.dat <- Shoe.data
+model.jags1 <- jags.model(Model1[[2]], data = Train.dat, n.chains=2, quiet=TRUE)
+update(model.jags1, 50000, progress.bar="none")
+sample.jags1 <- coda.samples(model.jags1, variable.names = var, thin = 10, n.iter = 50000, progress.bar="none")
+saveRDS(sample.jags1, file = "samples1.RDS")
+```
+
+```{r}
+## JAGS Model: 1.1 Runner:RE Course:RE Shoe:Linear
+Model1[[3]] <- textConnection("model{
+
+   ## Likelihood
+    for(ii in 1:n){
+      y[ii] ~ dnorm(alpha1 + alpha2[f1[ii]] + alpha3[f3[ii]] + inprod(x[ii,], beta[]), taue)
+    }
+
+
+   ## Priors
+   # Random effects
+    alpha1 ~ dnorm(mu, pec)
+    for(ii in 1:nf1){
+      alpha2[ii] ~ dnorm(mu, pec)
+    }
+    for(ii in 1:nf3){
+      alpha3[ii] ~ dnorm(mu, pec)
+    }
+    
+    for(jj in 1:p){
+      beta[jj] ~ dnorm(0, 0.001)
+    }
+    mu   ~ dnorm(0,0.001)
+    taue ~ dgamma(0.1,0.1)
+    pec <- 1 / sd^2
+    sd ~ dt(0, pow(10,-2), 1)T(0,)
+}")
+## Train & Test
+var <- c("beta")
+Train.dat <- Shoe.data
+model.jags1 <- jags.model(Model1[[3]], data = Train.dat, n.chains=2, quiet=TRUE)
+update(model.jags1, 50000, progress.bar="none")
+sample.jags1 <- coda.samples(model.jags1, variable.names = var, thin = 10, n.iter = 50000, progress.bar="none")
+saveRDS(sample.jags1, file = "samples2.RDS")
+```
+
+
+```{r}
+## JAGS Model: 1.1 Runner:RE Course:RE Shoe:Linear
+Model1[[4]] <- textConnection("model{
+
+   ## Likelihood
+    for(ii in 1:n){
+      y[ii] ~ dnorm(alpha1 + alpha2[f1[ii]] + alpha3[f2[ii]] + inprod(x[ii,], beta[]), taue)
+    }
+
+
+   ## Priors
+   # Random effects
+    alpha1 ~ dnorm(mu, pec)
+    for(ii in 1:nf1){
+      alpha2[ii] ~ dnorm(mu, pec)
+    }
+    for(ii in 1:nf2){
+      alpha3[ii] ~ dnorm(mu, pec)
+    }
+    
+    for(jj in 1:p){
+      beta[jj] ~ dnorm(0, 0.001)
+    }
+    mu   ~ dnorm(0,0.001)
+    taue ~ dgamma(0.1,0.1)
+    pec <- 1 / sd^2
+    sd ~ dt(0, pow(10,-2), 1)T(0,)
+}")
+## Train & Test
+var <- c("beta")
+Train.dat <- Shoe.data
+model.jags1 <- jags.model(Model1[[4]], data = Train.dat, n.chains=2, quiet=TRUE)
+update(model.jags1, 50000, progress.bar="none")
+sample.jags1 <- coda.samples(model.jags1, variable.names = var, thin = 10, n.iter = 50000, progress.bar="none")
+saveRDS(sample.jags1, file = "samples3.RDS")
+```
